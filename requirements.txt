@@ -2,7 +2,7 @@ langchain
 langchain-community
 langchain-google-genai
 faiss-cpu
-PyMuPDF
+PyPDF2
 google-generativeai
 tiktoken
 python-dotenv

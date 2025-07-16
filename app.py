@@ -10,7 +10,8 @@ import threading
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain.chains import RetrievalQA
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferWindowMemory
 
 from utils.timeline_extractor import extract_timeline
 import plotly.express as px  # type: ignore
@@ -30,6 +31,8 @@ if not GOOGLE_API_KEY:
 # Initialize session state
 if 'qa_chain' not in st.session_state:
     st.session_state.qa_chain = None
+if 'memory' not in st.session_state:
+    st.session_state.memory = None
 if 'processed_file' not in st.session_state:
     st.session_state.processed_file = None
 if 'chat_history' not in st.session_state:
@@ -41,6 +44,13 @@ if 'input_key' not in st.session_state:
 def clear_input():
     # Increment key to force input widget to reset
     st.session_state.input_key += 1
+
+def clear_chat_and_memory():
+    """Clear both chat history and conversation memory"""
+    st.session_state.chat_history = []
+    if st.session_state.memory:
+        st.session_state.memory.clear()
+    clear_input()
 
 def create_embeddings_and_vectorstore(_text_chunks, _api_key):
     """Create embeddings and vector store in a way that handles async issues"""
@@ -91,7 +101,7 @@ def create_embeddings_and_vectorstore(_text_chunks, _api_key):
     return result[0]
 
 def create_qa_chain(vectorstore):
-    """Create QA chain with Gemini LLM"""
+    """Create QA chain with Gemini LLM and conversation memory"""
     try:
         retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
         llm = ChatGoogleGenerativeAI(
@@ -100,11 +110,23 @@ def create_qa_chain(vectorstore):
             temperature=0.1
         )
         
-        qa_chain = RetrievalQA.from_chain_type(
+        # Create conversation memory to remember chat history
+        memory = ConversationBufferWindowMemory(
+            k=10,  # Remember last 10 exchanges
+            memory_key="chat_history",
+            return_messages=True,
+            output_key="answer"
+        )
+        
+        # Store memory in session state
+        st.session_state.memory = memory
+        
+        qa_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
             retriever=retriever,
+            memory=memory,
             return_source_documents=True,
-            chain_type="stuff"
+            verbose=True
         )
         
         return qa_chain
@@ -389,7 +411,7 @@ if pdf_file is not None:
                     # Load existing vector store
                     embedding = GoogleGenerativeAIEmbeddings(
                         model="models/embedding-001",
-                        google_api_key=GOOGLE_API_KEY
+                        google_api_key=SecretStr(GOOGLE_API_KEY)
                     )
                     vectorstore = FAISS.load_local("faiss_index", embedding, allow_dangerous_deserialization=True)
                 else:
@@ -421,6 +443,13 @@ if pdf_file is not None:
 
     # Chat Interface
     if st.session_state.qa_chain is not None:
+        # Memory status indicator
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            memory_count = len(st.session_state.memory.chat_memory.messages) // 2 if st.session_state.memory else 0
+            if memory_count > 0:
+                st.info(f"🧠 Memory Active: Remembering {memory_count} conversation exchanges")
+        
         st.markdown("### 💬 Chat with Your Document")
         
         # Display chat history
@@ -452,6 +481,7 @@ if pdf_file is not None:
                 <div class="welcome-icon">🎯</div>
                 <strong>Ready to explore your document!</strong><br>
                 Ask me anything about the historical content you've uploaded.<br>
+                I'll remember our conversation, so feel free to ask follow-up questions!<br>
                 Try questions like: "What happened in 1947?" or "Tell me about the main events"
             </div>
             """, unsafe_allow_html=True)
@@ -474,8 +504,7 @@ if pdf_file is not None:
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
             if st.button("🗑️ Clear Chat", key="clear_btn", use_container_width=True):
-                st.session_state.chat_history = []
-                clear_input()
+                clear_chat_and_memory()
                 st.rerun()
         
         # Handle message sending - only when send button is clicked
@@ -484,12 +513,13 @@ if pdf_file is not None:
             
             with st.spinner("🤔 Thinking..."):
                 try:
-                    response = st.session_state.qa_chain({"query": question_to_send})
+                    # Use invoke method instead of deprecated __call__
+                    response = st.session_state.qa_chain.invoke({"question": question_to_send})
                     
                     # Add to chat history (sources removed for cleaner UI)
                     st.session_state.chat_history.append((
                         question_to_send,
-                        response["result"],
+                        response["answer"],  # Use 'answer' instead of 'result'
                         []  # Empty sources list
                     ))
                     
@@ -516,7 +546,8 @@ else:
         <p><strong>What you can do:</strong></p>
         <p>📄 Upload historical textbooks, research papers, or archive documents<br>
         🤖 Ask questions about dates, events, people, and places<br>
-        💾 Download extracted timeline data as JSON<br>
+        � Have conversations with follow-up questions (I remember our chat!)<br>
+        �💾 Download extracted timeline data as JSON<br>
         🎯 Get AI-powered answers from your documents</p>
     </div>
     """, unsafe_allow_html=True)
