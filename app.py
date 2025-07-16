@@ -118,70 +118,219 @@ st.set_page_config(page_title="Historical Timeline Chatbot", layout="wide")
 # Custom CSS for better chat styling
 st.markdown("""
 <style>
-    .chat-container {
-        max-height: 400px;
-        overflow-y: auto;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        margin-bottom: 20px;
+    /* Main app styling */
+    .main {
+        padding-top: 2rem;
     }
     
+    /* Header styling */
+    .app-header {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .app-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .app-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    /* Chat container styling */
+    .chat-container {
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 1.5rem;
+        border: 2px solid #f0f2f6;
+        border-radius: 20px;
+        margin-bottom: 1.5rem;
+        background: #fafafa;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    /* Message styling */
     .user-message {
         display: flex;
         justify-content: flex-end;
-        margin: 10px 0;
+        margin: 1rem 0;
     }
     
     .user-bubble {
-        background-color: #007ACC;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 12px 16px;
-        border-radius: 18px 18px 4px 18px;
-        max-width: 70%;
+        padding: 15px 20px;
+        border-radius: 25px 25px 5px 25px;
+        max-width: 75%;
         word-wrap: break-word;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 3px 15px rgba(102, 126, 234, 0.3);
+        font-size: 0.95rem;
+        line-height: 1.4;
     }
     
     .bot-message {
         display: flex;
         justify-content: flex-start;
-        margin: 10px 0;
+        margin: 1rem 0;
+        align-items: flex-start;
+    }
+    
+    .bot-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        flex-shrink: 0;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
     }
     
     .bot-bubble {
-        background-color: #f8f9fa;
+        background: white;
         color: #333;
-        padding: 12px 16px;
-        border-radius: 18px 18px 18px 4px;
-        max-width: 70%;
+        padding: 15px 20px;
+        border-radius: 25px 25px 25px 5px;
+        max-width: 75%;
         word-wrap: break-word;
-        border: 1px solid #e9ecef;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 2px solid #f0f2f6;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    
+    /* Input area styling */
+    .input-container {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 20px;
+        border: 2px solid #f0f2f6;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-top: 1rem;
     }
     
     .stTextInput > div > div > input {
-        border-radius: 20px;
+        border-radius: 25px;
+        border: 2px solid #e6e9ef;
+        padding: 12px 20px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
     }
     
+    .stTextInput > div > div > input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Button styling */
     .stButton > button {
-        border-radius: 20px;
-        background-color: #007ACC;
+        border-radius: 25px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
+        padding: 12px 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 15px rgba(102, 126, 234, 0.3);
     }
     
     .stButton > button:hover {
-        background-color: #005a9e;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
     }
+    
+    /* File uploader styling */
+    .uploadedFile {
+        border-radius: 15px;
+        border: 2px dashed #667eea;
+        padding: 2rem;
+        text-align: center;
+        background: #f8f9ff;
+    }
+    
+    /* Status messages */
+    .stSuccess {
+        border-radius: 15px;
+        background: linear-gradient(135deg, #00c851 0%, #007e33 100%);
+        color: white;
+    }
+    
+    .stInfo {
+        border-radius: 15px;
+        background: linear-gradient(135deg, #33b5e5 0%, #0099cc 100%);
+        color: white;
+    }
+    
+    .stWarning {
+        border-radius: 15px;
+        background: linear-gradient(135deg, #ffbb33 0%, #ff8800 100%);
+        color: white;
+    }
+    
+    /* Welcome message */
+    .welcome-message {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #666;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+    
+    .welcome-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Processing status */
+    .processing-status {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 15px;
+        text-align: center;
+        margin: 1rem 0;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📚 Historical Timeline Chatbot")
-st.markdown("Upload a history-related PDF and ask any date-based questions (e.g., *What happened in 1947?*).")
+# App Header
+st.markdown("""
+<div class="app-header">
+    <div class="app-title">📚 Historical Timeline Chatbot</div>
+    <div class="app-subtitle">Upload any historical PDF and chat with an AI to explore timelines and events</div>
+</div>
+""", unsafe_allow_html=True)
 
 # Upload PDF
-pdf_file = st.file_uploader("Upload a history textbook or archive PDF", type=["pdf"])
+with st.container():
+    st.markdown("### 📎 Upload Your Historical Document")
+    pdf_file = st.file_uploader(
+        "Choose a PDF file", 
+        type=["pdf"],
+        help="Upload any historical textbook, research paper, or archive document"
+    )
 
 if pdf_file is not None:
     # Check if this is a new file
@@ -214,8 +363,15 @@ if pdf_file is not None:
 
                     # Show download button
                     if timeline_data:
-                        st.download_button("📥 Download Timeline JSON", file_name="timeline.json", mime="application/json",
-                                           data=json.dumps(timeline_data, indent=2))
+                        col1, col2, col3 = st.columns([1, 1, 1])
+                        with col2:
+                            st.download_button(
+                                "📥 Download Timeline JSON", 
+                                file_name="timeline.json", 
+                                mime="application/json",
+                                data=json.dumps(timeline_data, indent=2),
+                                use_container_width=True
+                            )
                 except Exception as e:
                     st.warning(f"Timeline extraction failed: {str(e)}. Continuing with RAG setup...")
 
@@ -274,7 +430,7 @@ if pdf_file is not None:
 
     # Chat Interface
     if st.session_state.qa_chain is not None:
-        st.markdown("### 💬 Chat with Your PDF")
+        st.markdown("### 💬 Chat with Your Document")
         
         # Display chat history
         if st.session_state.chat_history:
@@ -284,51 +440,70 @@ if pdf_file is not None:
                 st.markdown(
                     f'<div class="user-message">'
                     f'<div class="user-bubble">'
-                    f'<strong>You:</strong><br>{user_msg}'
+                    f'<strong>You</strong><br>{user_msg}'
                     f'</div></div>',
                     unsafe_allow_html=True
                 )
                 
-                # Bot message
+                # Bot message with avatar
                 st.markdown(
                     f'<div class="bot-message">'
+                    f'<div class="bot-avatar">🤖</div>'
                     f'<div class="bot-bubble">'
-                    f'<strong>🤖 Assistant:</strong><br>{bot_msg}'
+                    f'<strong>AI Assistant</strong><br>{bot_msg}'
                     f'</div></div>',
                     unsafe_allow_html=True
                 )
                 
                 # Sources expandable section
                 if sources:
-                    with st.expander(f"📚 Sources for message {i+1}", expanded=False):
+                    with st.expander(f"📚 View Sources ({len(sources)} references)", expanded=False):
                         for j, source in enumerate(sources):
-                            st.markdown(f"**Source {j+1}:**")
-                            st.text(source[:500] + "..." if len(source) > 500 else source)
+                            st.markdown(f"**📄 Reference {j+1}:**")
+                            st.text_area(
+                                f"Source {j+1}", 
+                                value=source[:800] + "..." if len(source) > 800 else source,
+                                height=100,
+                                disabled=True,
+                                key=f"source_{i}_{j}"
+                            )
                             if j < len(sources) - 1:
                                 st.markdown("---")
             st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.info("👋 Welcome! Upload a PDF and start chatting to get answers about its content.")
+            st.markdown("""
+            <div class="welcome-message">
+                <div class="welcome-icon">🎯</div>
+                <strong>Ready to explore your document!</strong><br>
+                Ask me anything about the historical content you've uploaded.<br>
+                Try questions like: "What happened in 1947?" or "Tell me about the main events"
+            </div>
+            """, unsafe_allow_html=True)
         
-        # Input area at the bottom
+        # Input area
+        st.markdown('<div class="input-container">', unsafe_allow_html=True)
         col1, col2 = st.columns([4, 1])
         
         with col1:
             user_input = st.text_input(
-                "Type your message...", 
-                placeholder="Ask about historical events, dates, or any content from your PDF...",
+                "💭 Ask me anything about your document...", 
+                placeholder="e.g., What were the major events in 1947? Who were the key figures?",
                 key=f"chat_input_{st.session_state.input_key}",
                 label_visibility="collapsed"
             )
         
         with col2:
-            send_button = st.button("Send 📤", use_container_width=True, key="send_btn")
+            send_button = st.button("Send �", use_container_width=True, key="send_btn")
         
-        # Clear chat button
-        if st.button("🗑️ Clear Chat History", key="clear_btn"):
-            st.session_state.chat_history = []
-            clear_input()
-            st.rerun()
+        # Action buttons
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("🗑️ Clear Chat", key="clear_btn", use_container_width=True):
+                st.session_state.chat_history = []
+                clear_input()
+                st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Handle message sending - only when send button is clicked
         if send_button and user_input and user_input.strip():
@@ -364,4 +539,16 @@ if pdf_file is not None:
             st.markdown('<div id="chat-bottom"></div>', unsafe_allow_html=True)
 
 else:
-    st.info("👆 Please upload a PDF file to get started.")
+    # Landing page when no PDF is uploaded
+    st.markdown("""
+    <div class="welcome-message">
+        <div class="welcome-icon">📚</div>
+        <h3>Welcome to Historical Timeline Chatbot!</h3>
+        <p>Upload any historical PDF document to get started.</p>
+        <p><strong>What you can do:</strong></p>
+        <p>📄 Upload historical textbooks, research papers, or archive documents<br>
+        🤖 Ask questions about dates, events, people, and places<br>
+        💾 Download extracted timeline data as JSON<br>
+        📚 View source references for all AI responses</p>
+    </div>
+    """, unsafe_allow_html=True)
