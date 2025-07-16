@@ -212,15 +212,6 @@ st.markdown("""
     }
     
     /* Input area styling */
-    .input-container {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 20px;
-        border: 2px solid #f0f2f6;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        margin-top: 1rem;
-    }
-    
     .stTextInput > div > div > input {
         border-radius: 25px;
         border: 2px solid #e6e9ef;
@@ -454,21 +445,6 @@ if pdf_file is not None:
                     f'</div></div>',
                     unsafe_allow_html=True
                 )
-                
-                # Sources expandable section
-                if sources:
-                    with st.expander(f"📚 View Sources ({len(sources)} references)", expanded=False):
-                        for j, source in enumerate(sources):
-                            st.markdown(f"**📄 Reference {j+1}:**")
-                            st.text_area(
-                                f"Source {j+1}", 
-                                value=source[:800] + "..." if len(source) > 800 else source,
-                                height=100,
-                                disabled=True,
-                                key=f"source_{i}_{j}"
-                            )
-                            if j < len(sources) - 1:
-                                st.markdown("---")
             st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.markdown("""
@@ -481,7 +457,6 @@ if pdf_file is not None:
             """, unsafe_allow_html=True)
         
         # Input area
-        st.markdown('<div class="input-container">', unsafe_allow_html=True)
         col1, col2 = st.columns([4, 1])
         
         with col1:
@@ -503,8 +478,6 @@ if pdf_file is not None:
                 clear_input()
                 st.rerun()
         
-        st.markdown('</div>', unsafe_allow_html=True)
-        
         # Handle message sending - only when send button is clicked
         if send_button and user_input and user_input.strip():
             question_to_send = user_input  # Store the current input
@@ -513,16 +486,11 @@ if pdf_file is not None:
                 try:
                     response = st.session_state.qa_chain({"query": question_to_send})
                     
-                    # Extract source documents
-                    sources = []
-                    if "source_documents" in response and response["source_documents"]:
-                        sources = [doc.page_content for doc in response["source_documents"]]
-                    
-                    # Add to chat history
+                    # Add to chat history (sources removed for cleaner UI)
                     st.session_state.chat_history.append((
                         question_to_send,
                         response["result"],
-                        sources
+                        []  # Empty sources list
                     ))
                     
                     # Clear the input by changing its key
@@ -549,6 +517,6 @@ else:
         <p>📄 Upload historical textbooks, research papers, or archive documents<br>
         🤖 Ask questions about dates, events, people, and places<br>
         💾 Download extracted timeline data as JSON<br>
-        📚 View source references for all AI responses</p>
+        🎯 Get AI-powered answers from your documents</p>
     </div>
     """, unsafe_allow_html=True)
